@@ -1,0 +1,62 @@
+---
+title: "ST793Blog"
+author: "Champon, Xiaoxia and Yang, Hongjian"
+date: "11/28/2021"
+output: html_document
+---
+
+# Introduction
+In time-series analysis, stationary is the most important assumption about data collected over time. In traditional statistics, data is collected in an independent and identical way and all inferences are based on this fundamental assumption. In contrast, in time-series analysis, the independent assumption no longer holds. Since we get only one observation at each timestamp, we need stationary in order to make inference on time-series data. With stationary assumption, as long as the lag between two observations are the same, their correlation stays the same, i.e., $Cor(Y(t), Y(t+k))$ depends only on lag $k$.
+
+# Motivation
+In this blog we are most interested in studying two underlying models: Random Walk with Drift (Y_t = $\alpha$ + $\rho$ Y_{t-1} + $\epsilon_t$ ) and time-series with only a deterministic trend: Y_t = $\beta_{0}$ + $\beta_{1}$t + $\epsilon_t$. Note that the second model is just a linear regression model with time $t$ as the covariate.
+
+Now let's talk about why we are interested in these two models. 
+
+Firstly, if data comes from stationary AR(1) process (Y(t) =  0.4 * Y_{t-1} + $\epsilon_t$), it looks like this:
+
+This time-series data oscillates around $0$ and has stationary covariance. We can make all kinds of inference, like forecasting.
+```{r}
+# Plots used in the introduction part
+set.seed(1234)
+obs = 200
+burnin = 50
+# Generate stationary data from AR(1) process 
+x1 = arima.sim(model = list(order = c(1, 0, 0), ar = 0.4), n = obs)
+x1 = x1[burnin: obs]
+plot(x1, type = 'l', main = 'Y(t) = 0.4Y(t-1) + a(t)')
+```
+
+Now, if the $\rho$ parameter above is $1$, i.e., $Y(t) = Y_{t-1} + \epsilon_t$, the plot looks like this:
+
+In this scenario, stationary variance no longer holds and it seems like there are some trends present in the data.
+```{r}
+# Generate data from AR(1) process with a unit root
+x2 = arima.sim(model = list(order = c(1, 0, 0), ar = 0.99), n = obs)
+x2 = x2[burnin: obs]
+plot(x2, type = 'l', main = 'Y(t) = Y(t-1) + a(t)')
+```
+
+
+Next, if the underlying model is a random walk with drift ($Y_t = 1 + Y_{t-1} + \epsilon_t $), it looks like this:
+
+Even though both models are AR(1) process and $\rho$ parameter is the same, their behavior is totally different.
+```{r}
+# Generate data from AR(1) process with drift
+time = 1:obs
+x3 = 1 * time + arima.sim(model = list(order = c(1, 0, 0), ar = 0.99), n = obs)
+x3 = x3[burnin: obs]
+plot(x3, type = 'l', main = 'Y(t) = 1 + Y(t-1) + a(t)')
+```
+
+
+Finally and most interestingly, if the underlying model only have a deterministic trend ($Y_t = \beta_{0} + \beta_{1}t + \epsilon_t $), it looks like this:
+
+Even though the plot looks very similar to the last one, the underlying model is totally different: it doesn't even have an autoregressive component.
+```{r}
+# Generate data with a deterministic trend only (Y = 2 + t + a(t))
+noise = rnorm(obs)
+x4 = 2 + time + noise
+x4 = x4[burnin: obs]
+plot(x4, type = 'l', main = 'Y(t) = 2 + t + a(t)')
+```
